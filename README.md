@@ -5,7 +5,7 @@ Academic Title: **Machine Learning-Based Analysis of In-Demand Skills, Salary Tr
 [![Python Version](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
 [![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%7C%20XGBoost%20%7C%20Statsmodels-brightgreen.svg)](https://xgboost.readthedocs.io/)
 [![Project Status](https://img.shields.io/badge/Status-Complete-success.svg)](#-project-overview)
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)](#-license)
+[![License](https://img.shields.io/badge/License-Copyright%20Reserved-red.svg)](#-copyright--license)
 
 ---
 
@@ -22,6 +22,17 @@ The system processes **12,235 unique technology job postings** spanning **Januar
 - 🔒 **Cybersecurity** (10.1%)
 - 🛠️ **IT Support** (7.9%)
 - 🎨 **UI/UX** (6.9%)
+
+---
+
+## 💡 Why Use TechCarrierBD? (Value Proposition)
+
+| Stakeholder Group | Value & Practical Applications |
+| :--- | :--- |
+| 🎓 **Students & Job Seekers** | Gain clear data-driven clarity on top in-demand skills (Python, SQL, React, AWS, Docker) and realistic salary expectations across experience levels (Entry, Mid, Senior) to focus career development. |
+| 🏫 **Universities & Educators** | Access empirical labor market evidence to modernize Computer Science & IT curricula, bridging the gap between academic coursework and current Bangladesh industry demands. |
+| 🏢 **Recruiters & HR Leaders** | Benchmark competitive salary packages in BDT and automate job description classification and technical requirement extraction. |
+| 🏛️ **Policymakers (NSDA, ICT Division)** | Utilize multi-year time-series demand forecasts to guide national ICT skill development frameworks and labor market strategy toward 2035. |
 
 ---
 
@@ -65,6 +76,53 @@ The TechCarrierBD pipeline is organized into a modular four-layer architecture:
 
 ---
 
+## 📓 Jupyter Notebook Execution Guide & Maintenance Order
+
+To ensure full data integrity and reproducibility, the Jupyter Notebooks in `notebooks/` **must be executed in strict numerical sequence from 01 through 07**.
+
+### Sequential Notebook Order & Pipeline Dependencies:
+
+```
+01_data_collection.ipynb
+         │
+         ▼
+02_eda.ipynb
+         │
+         ▼
+03_preprocessing.ipynb          ──► Output: data/interim/jobs_cleaned.csv
+         │
+         ▼
+04_nlp_skill_extraction.ipynb  ──► Output: data/processed/classification_data.csv & f_data.csv
+         │
+         ▼
+05_classification.ipynb         ──► Output: models/best_classifier.pkl & evaluation metrics
+         │
+         ▼
+06_forecasting.ipynb            ──► Output: figures/forecast.png & time-series benchmarks
+         │
+         ▼
+07_error_analysis.ipynb         ──► Output: figures/feature_importance.png & error matrix
+```
+
+### Detailed Notebook Overview:
+
+| Order | Notebook File | Primary Purpose | Key Output / Artifact Produced |
+| :---: | :--- | :--- | :--- |
+| **01** | `01_data_collection.ipynb` | Ingestion, verification, and structural inspection of raw multi-source data. | Raw schema confirmation (`data/raw/jobs_raw.csv`) |
+| **02** | `02_eda.ipynb` | Exploratory data analysis addressing RQ1 & RQ2 (category distributions, skill frequencies, salary boxplots). | `figures/job_distribution.png`, `figures/skill_frequency.png`, `figures/salary_distribution.png` |
+| **03** | `03_preprocessing.ipynb` | Executes text normalization, duplicate removal, location mapping, and experience parsing. | `data/interim/jobs_cleaned.csv` |
+| **04** | `04_nlp_skill_extraction.ipynb` | Extracts 22 binary skill features, fits TF-IDF vectorizer, and aggregates time-series demand dataset. | `data/processed/classification_data.csv`, `data/processed/f_data.csv`, `models/tfidf_vectorizer.pkl` |
+| **05** | `05_classification.ipynb` | Benchmarks multi-class classifiers (Dummy, Random Forest, XGBoost) and salary regressors using 5-Fold Stratified CV. | `models/best_classifier.pkl`, `figures/confusion_matrix.png` |
+| **06** | `06_forecasting.ipynb` | Evaluates sequential time-aware demand forecasting (Naive, ARIMA, XGBoost Lag Model). | `figures/forecast.png` |
+| **07** | `07_error_analysis.ipynb` | Analyzes misclassification patterns and calculates Gini/Gain feature importances. | `figures/feature_importance.png` |
+
+#### ⚠️ Why Maintain This Order?
+1. **Upstream Data Dependencies:** Notebooks `03` and `04` process and create the feature matrices used by downstream modeling notebooks (`05`, `06`, `07`).
+2. **Model Artifact Dependencies:** Notebook `07` (Error Analysis) loads the trained model object (`models/best_classifier.pkl`) saved during the execution of Notebook `05`.
+3. **Reproducibility Guarantee:** Executing notebooks out of sequence may lead to `FileNotFoundError` or outdated data inputs.
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -81,14 +139,14 @@ TechCarrierBD/
 │   ├── preprocessing.py               # Text cleaning, normalization, NLP skill regex routines
 │   ├── feature_engineering.py         # Binary skill indicators, TF-IDF vectorizer, lag features
 │   └── models.py                      # Multi-class classification, salary regression, ARIMA/XGBoost
-├── notebooks/                         # 7 Self-Contained Jupyter Notebooks
-│   ├── 01_data_collection.ipynb       # Ingestion & raw data verification
-│   ├── 02_eda.ipynb                   # Exploratory Data Analysis & visual plots
-│   ├── 03_preprocessing.ipynb         # Data cleaning & normalization pipeline
-│   ├── 04_nlp_skill_extraction.ipynb  # Skill extraction & feature matrix generation
-│   ├── 05_classification.ipynb        # Supervised classification & salary regression
-│   ├── 06_forecasting.ipynb           # Time-aware job demand forecasting
-│   └── 07_error_analysis.ipynb        # Misclassification error analysis & feature importance
+├── notebooks/                         # 7 Self-Contained Sequential Jupyter Notebooks
+│   ├── 01_data_collection.ipynb       # Step 1: Ingestion & raw data verification
+│   ├── 02_eda.ipynb                   # Step 2: Exploratory Data Analysis & visual plots
+│   ├── 03_preprocessing.ipynb         # Step 3: Data cleaning & normalization pipeline
+│   ├── 04_nlp_skill_extraction.ipynb  # Step 4: Skill extraction & feature matrix generation
+│   ├── 05_classification.ipynb        # Step 5: Supervised classification & salary regression
+│   ├── 06_forecasting.ipynb           # Step 6: Time-aware job demand forecasting
+│   └── 07_error_analysis.ipynb        # Step 7: Misclassification error analysis & feature importance
 ├── figures/                           # Generated High-Resolution Visualization Plots
 │   ├── job_distribution.png            # Job Category Distribution chart
 │   ├── skill_frequency.png             # Top 15 Demanded Technical Skills chart
@@ -180,13 +238,14 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 2. Run End-to-End ML Pipeline
-Executes data cleaning, feature engineering, multi-model cross-validation, hyperparameter tuning, salary regression, time-series forecasting, and figure generation:
+### 2. Run End-to-End ML Pipeline (Automated Mode)
+Executes data cleaning, feature engineering, multi-model cross-validation, hyperparameter tuning, salary regression, time-series forecasting, and figure generation in one command:
 ```bash
 python scripts/run_pipeline.py
 ```
 
-### 3. Open Interactive Jupyter Notebooks
+### 3. Run Notebooks Interactively (Sequential Mode)
+Launch Jupyter Notebooks and run them in **strict 01 $\rightarrow$ 07 order**:
 ```bash
 jupyter notebook notebooks/
 ```
@@ -205,6 +264,8 @@ jupyter notebook notebooks/
 
 ---
 
-## 📜 License
+## 📜 Copyright & License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+© 2026 Md. Yeasin Arafat & Abdullah Al-Fuwad. All rights reserved.
+
+This project, including source code, dataset processing modules, trained models, visual figures, and documentation, is protected under applicable copyright laws. Unauthorized copying, distribution, modification, or commercial use without prior explicit written permission from the authors is strictly prohibited.
