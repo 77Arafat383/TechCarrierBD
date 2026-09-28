@@ -167,7 +167,7 @@ The framework automatically generates publication-grade visualizations in `figur
 ### 1. Environment Setup
 ```bash
 # Clone repository and navigate into project folder
-git clone https://github.com/TechCarrierBD/TechCarrierBD.git
+git clone https://github.com/77Arafat383/TechCarrierBD.git
 cd TechCarrierBD
 
 # Create virtual environment
