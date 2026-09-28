@@ -3,6 +3,7 @@
 Academic Title: **Machine Learning-Based Analysis of In-Demand Skills, Salary Trends, and Job Demand Forecasting in Bangladesh's Technology Sector**
 
 [![Python Version](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.64.0-FF4B4B.svg)](https://streamlit.io/)
 [![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%7C%20XGBoost%20%7C%20Statsmodels-brightgreen.svg)](https://xgboost.readthedocs.io/)
 [![Project Status](https://img.shields.io/badge/Status-Complete-success.svg)](#-project-overview)
 [![License](https://img.shields.io/badge/License-Copyright%20Reserved-red.svg)](#-copyright--license)
@@ -69,9 +70,9 @@ The TechCarrierBD pipeline is organized into a modular four-layer architecture:
                                       │
                                       ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
-│                         4. CAREERPULSE OUTPUT LAYER                       │
-│    Skill Demand Ranks  │  Salary Distributions  │  Evaluated ML Models    │
-└─────────────────────────────────────┬─────────────────────────────────────┘
+│              4. STREAMLIT WEB APP & CAREERPULSE OUTPUT LAYER              │
+│    Skill Demand Ranks  │  Salary Distributions  │  Live AI Predictors     │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -116,17 +117,13 @@ To ensure full data integrity and reproducibility, the Jupyter Notebooks in `not
 | **06** | `06_forecasting.ipynb` | Evaluates sequential time-aware demand forecasting (Naive, ARIMA, XGBoost Lag Model). | `figures/forecast.png` |
 | **07** | `07_error_analysis.ipynb` | Analyzes misclassification patterns and calculates Gini/Gain feature importances. | `figures/feature_importance.png` |
 
-#### ⚠️ Why Maintain This Order?
-1. **Upstream Data Dependencies:** Notebooks `03` and `04` process and create the feature matrices used by downstream modeling notebooks (`05`, `06`, `07`).
-2. **Model Artifact Dependencies:** Notebook `07` (Error Analysis) loads the trained model object (`models/best_classifier.pkl`) saved during the execution of Notebook `05`.
-3. **Reproducibility Guarantee:** Executing notebooks out of sequence may lead to `FileNotFoundError` or outdated data inputs.
-
 ---
 
 ## 📁 Repository Structure
 
 ```
 TechCarrierBD/
+├── app.py                             # Interactive Streamlit Web Application
 ├── data/
 │   ├── raw/
 │   │   └── jobs_raw.csv                # Primary unified raw job postings dataset (2022-2026)
@@ -163,7 +160,7 @@ TechCarrierBD/
 │   ├── generate_dataset.py            # Multi-year BD tech job dataset generator
 │   ├── build_notebooks.py             # Notebook builder utility
 │   └── run_pipeline.py                # End-to-end master execution runner
-├── requirements.txt                   # Verified Python dependencies
+├── requirements.txt                   # Verified Python dependencies (Streamlit, Plotly, Scikit-Learn)
 └── README.md
 ```
 
@@ -201,22 +198,7 @@ Evaluated on **57 monthly observations** (Jan 2022 to Sep 2026) with sequential 
 
 ---
 
-## 📈 Visualizations & Insights
-
-The framework automatically generates publication-grade visualizations in `figures/`:
-
-| Visualization Chart | Description |
-| :--- | :--- |
-| ![Job Category Distribution](figures/job_distribution.png) | **Job Category Distribution:** Breakdown of postings across Software Development, Data/AI, Cloud, Security, Support, and UI/UX. |
-| ![Top Tech Skills](figures/skill_frequency.png) | **Top Demanded Skills:** Python (38.4%), SQL (34.2%), JavaScript (31.1%), React (28.5%), Docker (24.2%), and AWS (22.8%) lead market demand. |
-| ![Salary Distribution](figures/salary_distribution.png) | **Salary Trends:** Advertised monthly salary distributions and boxplots across experience levels and tech categories. |
-| ![Confusion Matrix](figures/confusion_matrix.png) | **Confusion Matrix:** Detailed class-by-class evaluation heatmap for Tuned XGBoost Classifier. |
-| ![Time-Series Forecast](figures/forecast.png) | **Demand Forecast:** Monthly historical job demand trend mapped against ARIMA and XGBoost forecasting models. |
-| ![Feature Importance](figures/feature_importance.png) | **Feature Importance:** Top 15 Gini/Gain feature importance scores driving job category predictions. |
-
----
-
-## 💻 Installation & Execution
+## 💻 Installation, Execution & Streamlit Deployment
 
 ### Prerequisites
 - Python 3.10+ (Tested on Python 3.13)
@@ -234,17 +216,29 @@ python -m venv .venv
 # Activate virtual environment (Windows PowerShell)
 .venv\Scripts\Activate.ps1
 
-# Install dependencies
+# Install dependencies (includes Streamlit & Plotly)
 pip install -r requirements.txt
 ```
 
-### 2. Run End-to-End ML Pipeline (Automated Mode)
+### 2. Launch Interactive Streamlit Web App 🌐
+Run the multi-page Streamlit application locally to explore market analytics, test the live AI Job Category Predictor, and calculate salary estimations:
+```bash
+streamlit run app.py
+```
+
+### 3. Deploying Streamlit Web App to Cloud (Streamlit Community Cloud / Hugging Face / Render)
+1. Fork or push this repository to your GitHub account.
+2. Visit [share.streamlit.io](https://share.streamlit.io) and log in with GitHub.
+3. Select your repository `TechCarrierBD`, branch `main`, and main file path `app.py`.
+4. Click **Deploy!** Streamlit will automatically read `requirements.txt` and host your live application.
+
+### 4. Run End-to-End ML Pipeline (Automated Mode)
 Executes data cleaning, feature engineering, multi-model cross-validation, hyperparameter tuning, salary regression, time-series forecasting, and figure generation in one command:
 ```bash
 python scripts/run_pipeline.py
 ```
 
-### 3. Run Notebooks Interactively (Sequential Mode)
+### 5. Run Notebooks Interactively (Sequential Mode)
 Launch Jupyter Notebooks and run them in **strict 01 $\rightarrow$ 07 order**:
 ```bash
 jupyter notebook notebooks/
