@@ -8,6 +8,8 @@ warnings.filterwarnings('ignore')
 
 import os
 import ast
+import base64
+import re
 import pandas as pd
 import numpy as np
 import joblib
@@ -114,10 +116,22 @@ navigation = st.sidebar.radio(
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 **Authors:** Md. Yeasin Arafat & Abdullah Al-Fuwad  
-**Department:** Computer Science & Engineering  
+**Department:** Computer Science and Telecommunication Engineering  
 **NSTU, Bangladesh**  
 [GitHub Repository](https://github.com/77Arafat383/TechCarrierBD)
 """)
+
+pdf_filename = "TechCarrierBD_IEEE_Paper11.pdf"
+pdf_sidebar_path = pdf_filename if os.path.exists(pdf_filename) else os.path.join("reports", pdf_filename)
+if os.path.exists(pdf_sidebar_path):
+    with open(pdf_sidebar_path, "rb") as f_pdf:
+        st.sidebar.download_button(
+            label="📄 Download IEEE Paper (PDF)",
+            data=f_pdf.read(),
+            file_name="TechCarrierBD_IEEE_Paper11.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
 
 # Load datasets and artifacts
 df_cleaned, df_processed, df_forecast = load_datasets()
@@ -224,18 +238,58 @@ elif navigation == "🎯 AI Job Role Predictor":
     cat2idx = cls_data['cat2idx']
     idx2cat = cls_data['idx2cat']
     feature_names = cls_data['feature_names']
-    
+
+    def build_auto_description(title, skills, level, years, location):
+        if not skills:
+            skills_text = "general technology requirements"
+        elif len(skills) == 1:
+            skills_text = skills[0]
+        else:
+            skills_text = ", ".join(skills[:-1]) + f", and {skills[-1]}"
+        return f"We are hiring a {level} level ({years:.1f} yrs exp) {title} in {location}. Core technical requirements include proficiency in {skills_text}, software architecture, REST APIs, and production system deployments."
+
     col_in1, col_in2 = st.columns([1, 1])
     
     with col_in1:
-        job_title_input = st.text_input("Job Title", "Senior React & Node.js Developer")
-        location_input = st.selectbox("Location", ["Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Remote", "Other"])
-        exp_level_input = st.selectbox("Experience Level", ["Entry", "Mid", "Senior", "Lead/Executive"])
-        exp_years_input = st.number_input("Experience Years", min_value=0.0, max_value=15.0, value=3.0, step=0.5)
+        job_title_input = st.text_input("Job Title", "Senior React & Node.js Developer", key="pred_title_in")
+        location_input = st.selectbox("Location", ["Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Remote", "Other"], key="pred_loc_in")
+        exp_level_input = st.selectbox("Experience Level", ["Entry", "Mid", "Senior", "Lead/Executive"], key="pred_lvl_in")
+        exp_years_input = st.number_input("Experience Years", min_value=0.0, max_value=15.0, value=3.0, step=0.5, key="pred_yrs_in")
         
     with col_in2:
-        selected_skills = st.multiselect("Select Required Technical Skills", [s.title() for s in TOP_SKILLS], default=["React", "Node", "Javascript", "Git"])
-        desc_input = st.text_area("Job Description / Requirements Text", "We are hiring a full stack developer skilled in React.js, Node.js, REST APIs, PostgreSQL database, and cloud deployments.")
+        selected_skills = st.multiselect(
+            "Select Required Technical Skills",
+            [s.title() for s in TOP_SKILLS],
+            default=["React", "Node", "Javascript", "Git"],
+            key="pred_skills_in"
+        )
+        
+        # Track current state tuple to detect changes in inputs
+        current_state_tuple = (job_title_input, tuple(selected_skills), exp_level_input, exp_years_input, location_input)
+        
+        # Directly update st.session_state["desc_area_input"] when state changes or on initial load
+        if "last_state_tuple" not in st.session_state:
+            st.session_state["desc_area_input"] = build_auto_description(job_title_input, selected_skills, exp_level_input, exp_years_input, location_input)
+            st.session_state["last_state_tuple"] = current_state_tuple
+        elif st.session_state.get("last_state_tuple") != current_state_tuple:
+            st.session_state["desc_area_input"] = build_auto_description(job_title_input, selected_skills, exp_level_input, exp_years_input, location_input)
+            st.session_state["last_state_tuple"] = current_state_tuple
+
+        col_lbl, col_btn = st.columns([0.6, 0.4])
+        with col_lbl:
+            st.markdown("**Job Description / Requirements Text**")
+        with col_btn:
+            if st.button("✨ Auto-fill from Skills", key="btn_autofill_desc", help="Refresh job description text based on currently selected skills"):
+                st.session_state["desc_area_input"] = build_auto_description(job_title_input, selected_skills, exp_level_input, exp_years_input, location_input)
+
+        desc_input = st.text_area(
+            "Job Description / Requirements Text",
+            height=130,
+            label_visibility="collapsed",
+            help="This text automatically populates based on your selected skills. You can also edit it manually.",
+            key="desc_area_input"
+        )
+        st.caption("💡 *Tip: Selecting technical skills automatically updates the description text above. You can also edit it manually or leave it auto-filled.*")
         
     if st.button("🚀 Predict Job Category", type="primary"):
         feat_dict = {col: 0.0 for col in feature_names}
@@ -256,7 +310,8 @@ elif navigation == "🎯 AI Job Role Predictor":
         if exp_col in feat_dict:
             feat_dict[exp_col] = 1.0
             
-        text_full = f"{job_title_input} {desc_input}"
+        final_desc = desc_input.strip() if (desc_input and desc_input.strip()) else build_auto_description(job_title_input, selected_skills, exp_level_input, exp_years_input, location_input)
+        text_full = f"{job_title_input} {final_desc}"
         tfidf_vec = tfidf.transform([text_full]).toarray()[0]
         for w, val in zip(tfidf.get_feature_names_out(), tfidf_vec):
             tfidf_col = f"tfidf_{w}"
@@ -342,10 +397,62 @@ elif navigation == "📈 Demand Forecasting":
 # Page 6: Research Paper & Info
 elif navigation == "📑 Research Paper & Info":
     st.title("📑 Academic Paper & Documentation")
-    paper_path = "reports/techcarrierbd_research_paper.md"
-    if os.path.exists(paper_path):
-        with open(paper_path, "r", encoding="utf-8") as f:
-            paper_text = f.read()
-        st.markdown(paper_text)
-    else:
-        st.error("Research paper report not found at reports/techcarrierbd_research_paper.md")
+    
+    pdf_filename = "TechCarrierBD_IEEE_Paper11.pdf"
+    pdf_path = pdf_filename if os.path.exists(pdf_filename) else os.path.join("reports", pdf_filename)
+    
+    tab_paper, tab_pdf = st.tabs(["📄 Full Research Paper & Figures", "📑 IEEE Paper PDF Viewer & Download"])
+    
+    with tab_paper:
+        paper_path = "reports/techcarrierbd_research_paper.md"
+        if os.path.exists(paper_path):
+            with open(paper_path, "r", encoding="utf-8") as f:
+                paper_text = f.read()
+            
+            def embed_images_in_markdown(md_text):
+                def img_replacer(match):
+                    alt_text = match.group(1)
+                    rel_img_path = match.group(2)
+                    
+                    if rel_img_path.startswith("../"):
+                        clean_path = rel_img_path.replace("../", "")
+                    else:
+                        clean_path = rel_img_path
+                        
+                    full_img_path = os.path.normpath(os.path.join(".", clean_path))
+                    
+                    if os.path.exists(full_img_path):
+                        with open(full_img_path, "rb") as img_file:
+                            b64_data = base64.b64encode(img_file.read()).decode('utf-8')
+                        ext = os.path.splitext(full_img_path)[1].lower().replace('.', '')
+                        mime_type = "jpeg" if ext in ["jpg", "jpeg"] else "png"
+                        return f'<div style="text-align: center; margin: 18px 0;"><img src="data:image/{mime_type};base64,{b64_data}" alt="{alt_text}" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" /><p style="font-size: 0.9rem; color: #475569; margin-top: 6px;"><em>{alt_text}</em></p></div>'
+                    return match.group(0)
+
+                pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+                return re.sub(pattern, img_replacer, md_text)
+            
+            processed_paper_text = embed_images_in_markdown(paper_text)
+            st.markdown(processed_paper_text, unsafe_allow_html=True)
+        else:
+            st.error("Research paper report not found at reports/techcarrierbd_research_paper.md")
+            
+    with tab_pdf:
+        st.subheader("📑 IEEE Paper: TechCarrierBD_IEEE_Paper11.pdf")
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+                
+            st.download_button(
+                label="📥 Download IEEE Paper (PDF)",
+                data=pdf_bytes,
+                file_name="TechCarrierBD_IEEE_Paper11.pdf",
+                mime="application/pdf",
+                type="primary"
+            )
+            
+            b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+            pdf_display = f'<iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="900px" type="application/pdf" style="border: 1px solid #CBD5E1; border-radius: 8px;"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
+        else:
+            st.error(f"PDF file not found at {pdf_path}")
